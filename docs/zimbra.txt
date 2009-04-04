@@ -1,0 +1,26 @@
+* Mover mensaje a una carpeta
+* Marcar como junk
+* Eliminar mensaje
+* Marcar conversación como leída
+* Marcar mensaje como leído
+* Marcar folder como leído
+* Crear folder
+* Editar folder
+* Eliminar folder
+* Crear tag
+* Editar tag
+* Eliminar tag
+* Enviar correo
+* Traer todos los contactos
+* 
+
+
+*** realizar búsqueda (search)
+*** loguearse (login)
+*** traer mensaje (getMessage)
+*** traer conversación (getConversation)
+*** traer mensajes de conversación (getMessagesFromConversation)
+*** NoOpRequest
+
+
+TODO addSlashes, stripSlashes para queries de búsqueda
