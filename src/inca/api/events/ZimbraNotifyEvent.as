@@ -4,6 +4,8 @@ package inca.api.events {
 
 	public class ZimbraNotifyEvent extends Event {
 		
+		public static const NOTIFY:String = "zimbra_notify_notify";
+		
 		private var $__created:Array = new Array();
 		private var $__modified:Array = new Array();
 		private var $__deleted:Array = new Array();

@@ -80,6 +80,16 @@ package inca.api {
 		public function get idle():Boolean{ return $__idle; }
 		
 		// -->> Public Methods
+		public function getTag(id:uint):ZimbraTag{
+			if($__tagHashmap[id] != null) return $__tagHashmap[id];
+			throw new Error("Request error. Tag id not found on server.");
+		}
+		
+		public function getFolder(id:uint):ZimbraFolder{
+			if($__folderHashmap[id] != null) return $__folderHashmap[id];
+			throw new Error("Request error. Folder id not found on server.");
+		}
+		
 		public function login():void{
 			var req:Object = ObjectUtil.clone($__request);
 			req.Body = {AuthRequest: 
@@ -107,9 +117,10 @@ package inca.api {
 							}
 						};
 						
-			sendRequest(req, ZimbraEvent.SEARCH);
+			sendRequest(req, ZimbraSearchEvent.COMPLETE);
 		}
 		
+		/*
 		public function getMessage(id:int, read:Boolean = true, html:Boolean = false):void{
 			var req:Object = ObjectUtil.clone($__request);
 			req.Body = {GetMsgRequest:
@@ -123,7 +134,7 @@ package inca.api {
 							}
 					};
 			
-			sendRequest(req, ZimbraEvent.MESSAGE_LOADED);
+			//sendRequest(req, ZimbraEvent.MESSAGE_LOADED);
 		}
 		
 		public function getConversation(cid:int, fid:int, read:Boolean = true, html:Boolean = false):void{
@@ -139,7 +150,7 @@ package inca.api {
 							}
 					};
 			
-			sendRequest(req, ZimbraEvent.CONVERSATION_LOADED);
+			//sendRequest(req, ZimbraEvent.CONVERSATION_LOADED);
 		}
 		
 		public function getMessagesFromConversation(cid:int, limit:uint = 25, offset:uint = 0):void{
@@ -154,8 +165,9 @@ package inca.api {
 							}
 						}
 			
-			sendRequest(req, ZimbraEvent.CONVERSATION_MESSAGES_LOADED);
+			//sendRequest(req, ZimbraEvent.CONVERSATION_MESSAGES_LOADED);
 		}
+		*/
 		
 		// -->> Private Methods
 		private function noOpRequest():void{
@@ -188,9 +200,9 @@ package inca.api {
 			if(ref) loader.ref = ref;
 			loader.addEventListener(Event.COMPLETE, $__onRequestDone);
 			loader.load(uri);
-			$__idle = false;
 			
-			if(callType != "nooprequest"){
+			if(callType != "nooprequest" && $__loggedIn){
+				$__idle = false;
 				$__idleTimer.reset();
 				$__idleTimer.start();
 			}
@@ -200,36 +212,8 @@ package inca.api {
 			instance.connector = this;
 			instance.color = data.color || ZimbraTag.ORANGE;
 			instance.name = data.name;
+			instance.inca_internal::__unreadCount = data.unreadCount;
 			instance.inca_internal::__id = data.id;
-			if(data.u) instance.inca_internal::__unreadCount = data.u;
-		}
-		
-		private function setParentFolders():void{
-			for(var i:uint=0;i<$__mailbox.folders.length;i++){
-				if((($__mailbox.folders[i] as ZimbraFolder).parentFolder as ZimbraFolder).name) continue;
-				($__mailbox.folders[i] as ZimbraFolder).parentFolder = $__folderHashmap[($__mailbox.folders[i] as ZimbraFolder).parentFolder.id];
-			}
-		}
-		
-		private function setMailboxProps(props:Object):void{
-			$__mailbox.size = props.mbx[0].s;
-			
-			setFolders($__mailbox.folders, props.folder);
-			setParentFolders();
-			
-			if(props.tags.tag){
-				var t:Array = new Array();
-				var ts:Array = props.tags.tag;
-				var tag:ZimbraTag;
-				for(var i:uint=0;i<ts.length;i++){
-					tag = new ZimbraTag();
-					setTagProps(tag, ts[i]);
-					
-					t.push(tag);
-					$__tagHashmap[ts[i].id] = tag;
-				}
-				$__mailbox.tags = t;
-			}
 		}
 		
 		private function setFolderProps(instance:ZimbraFolder, data:Object):void{
@@ -262,67 +246,84 @@ package inca.api {
 			}
 		}
 		
-		private function setMessageProps(instance:ZimbraMessage, data:Object):void{
-			instance.connector = this;
-			instance.inca_internal::__id = data.id;
-			if(data.m[0].cid) instance.inca_internal::__conversation_id = data.m[0].cid;
-			
-			instance.inca_internal::__subject = data.su;
-			instance.inca_internal::__excerpt = data.fr;
-			instance.inca_internal::__date = new Date(data.d);
-			if(data.mp){
-				instance.inca_internal::__content = data.mp[0].content;
-				instance.inca_internal::__contentType = data.mp[0].ct;
-				instance.inca_internal::__size = data.mp[0].s;
-			}
-			
-			setMessageFlags(instance, (data.f || ""));
-			
-			var messageInfo:ZimbraMessageInfo;
-			for(var i:uint=0;i<data.e.length;i++){
-				messageInfo = new ZimbraMessageInfo();
-				messageInfo.inca_internal::__name = data.e[i].d;
-				messageInfo.inca_internal::__fullName = data.e[i].p;
-				messageInfo.inca_internal::__email = data.e[i].a;
-				
-				instance.inca_internal::addMessageInfo(messageInfo);
+		private function setParentFolders():void{
+			for(var i:uint=0;i<$__mailbox.folders.length;i++){
+				if((($__mailbox.folders[i] as ZimbraFolder).parentFolder as ZimbraFolder).name) continue;
+				($__mailbox.folders[i] as ZimbraFolder).parentFolder = $__folderHashmap[($__mailbox.folders[i] as ZimbraFolder).parentFolder.id];
 			}
 		}
 		
-		private function setMessageFlags(message:ZimbraMessage, flags:String):void{
-			if(flags.indexOf("u") != -1) message.inca_internal::__flags = message.flags | ZimbraMessage.UNREAD;
-			if(flags.indexOf("f") != -1) message.inca_internal::__flags = message.flags | ZimbraMessage.FLAGGED;
-			if(flags.indexOf("a") != -1) message.inca_internal::__flags = message.flags | ZimbraMessage.HAS_ATTACHMENT;
-			if(flags.indexOf("s") != -1) message.inca_internal::__flags = message.flags | ZimbraMessage.SENT_BY_ME;
-			if(flags.indexOf("r") != -1) message.inca_internal::__flags = message.flags | ZimbraMessage.REPLIED;
-			if(flags.indexOf("w") != -1) message.inca_internal::__flags = message.flags | ZimbraMessage.FORWARDED;
-			if(flags.indexOf("d") != -1) message.inca_internal::__flags = message.flags | ZimbraMessage.DRAFT;
-			if(flags.indexOf("x") != -1) message.inca_internal::__flags = message.flags | ZimbraMessage.DELETED;
-			if(flags.indexOf("n") != -1) message.inca_internal::__flags = message.flags | ZimbraMessage.NOTIFICATION_SENT;
-			if(flags.indexOf("!") != -1){
-				message.inca_internal::__flags = message.flags | ZimbraMessage.PRIORITY_HIGH;
-			}else if(flags.indexOf("?") != -1){
-				message.inca_internal::__flags = message.flags | ZimbraMessage.PRIORITY_LOW;
-			}else{
-				message.inca_internal::__flags = message.flags | ZimbraMessage.PRIORITY_NORMAL;
+		private function setMailboxProps(props:Object):void{
+			$__mailbox.size = props.mbx[0].s;
+			
+			setFolders($__mailbox.folders, props.folder);
+			setParentFolders();
+			
+			if(props.tags.tag){
+				var t:Array = new Array();
+				var ts:Array = props.tags.tag;
+				var tag:ZimbraTag;
+				for(var i:uint=0;i<ts.length;i++){
+					tag = new ZimbraTag();
+					setTagProps(tag, ts[i]);
+					
+					t.push(tag);
+					$__tagHashmap[ts[i].id] = tag;
+				}
+				$__mailbox.tags = t;
 			}
 		}
-
-		private function parseSearchResponse(searchResponse:Object):SearchResponse{
-			var response:SearchResponse = new SearchResponse();
-			response.inca_internal::__type = (searchResponse.m) ? Zimbra.LIST_TYPE_MESSAGE: Zimbra.LIST_TYPE_CONVERSATION;
-			if(searchResponse.more) response.inca_internal::__more = searchResponse.more;
-			if(searchResponse.offset) response.inca_internal::__offset = searchResponse.offset;
-			var msgs:Array = searchResponse.m || searchResponse.c || [];
-			var message:ZimbraMessage;
-			var messageInfo:ZimbraMessageInfo;
-			for(var i:uint=0;i<msgs.length;i++){
-				message = new ZimbraMessage();
-				setMessageProps(message, msgs[i]);
-				
-				response.inca_internal::addMessage(message);
+		
+		private function parseMessageFlags(flags:String):uint{
+			var res:uint = 0;
+			if(flags.indexOf("u") != -1) res = res | ZimbraMessage.UNREAD;
+			if(flags.indexOf("f") != -1) res = res | ZimbraMessage.FLAGGED;
+			if(flags.indexOf("a") != -1) res = res | ZimbraMessage.HAS_ATTACHMENT;
+			if(flags.indexOf("s") != -1) res = res | ZimbraMessage.SENT_BY_ME;
+			if(flags.indexOf("r") != -1) res = res | ZimbraMessage.REPLIED;
+			if(flags.indexOf("w") != -1) res = res | ZimbraMessage.FORWARDED;
+			if(flags.indexOf("d") != -1) res = res | ZimbraMessage.DRAFT;
+			if(flags.indexOf("x") != -1) res = res | ZimbraMessage.DELETED;
+			if(flags.indexOf("n") != -1) res = res | ZimbraMessage.NOTIFICATION_SENT;
+			if(flags.indexOf("!") != -1){
+				res = res | ZimbraMessage.PRIORITY_HIGH;
+			}else if(flags.indexOf("?") != -1){
+				res = res | ZimbraMessage.PRIORITY_LOW;
+			}else{
+				res = res | ZimbraMessage.PRIORITY_NORMAL;
 			}
 			
+			return res;
+		}
+		
+		private function buildSearchResponse(sResponse:Object):ZimbraSearchResponse{
+			var response:ZimbraSearchResponse = new ZimbraSearchResponse();
+			response.inca_internal::__type = (sResponse.m) ? Zimbra.LIST_TYPE_MESSAGE: Zimbra.LIST_TYPE_CONVERSATION;
+			if(sResponse.more) response.inca_internal::__more = sResponse.more;
+			if(sResponse.offset) response.inca_internal::__offset = sResponse.offset;
+			
+			var msgs:Array = sResponse.m || sResponse.c || [];
+			var collection:Array = [];
+			var obj:Object;
+			for(var i:uint=0;i<msgs.length;i++){
+				obj = new Object();
+				obj.id = msgs[i].id;
+				if(msgs[i].cid) obj.cid = msgs[i].cid;
+				obj.subject = msgs[i].su;
+				obj.excerpt = msgs[i].fr;
+				obj.flags = parseMessageFlags((msgs[i].f || ""));
+				obj.date = new Date(msgs[i].d);
+				obj.folder_id = $__folderHashmap[msgs[i].l];
+				obj.size = msgs[i].s;
+				obj.info = [];
+				
+				for(var ii:uint=0;ii<msgs[i].e.length;ii++){
+					obj.info.push({name: msgs[i].e[ii].d, fullName: msgs[i].e[ii].p, email: msgs[i].e[ii].a});
+				}
+				
+				collection.push(obj);
+			}
+			response.inca_internal::__collection = collection;
 			return response;
 		}
 		
@@ -402,7 +403,7 @@ package inca.api {
 					if(base.m[i].su) message.inca_internal::__subject = base.m[i].su;
 					if(base.m[i].fr) message.inca_internal::__excerpt = base.m[i].fr;
 					if(base.m[i].d) message.inca_internal::__date = new Date(base.m[i].d);
-					if(base.m[i].f) setMessageFlags(message, (base.m[i].f || ""));
+					if(base.m[i].f) message.inca_internal::__flags = parseMessageFlags((base.m[i].f || ""));
 					if(base.m[i].content) message.inca_internal::__content = base.m[i].content;
 					if(base.m[i].ct) message.inca_internal::__contentType = base.m[i].ct;
 					if(base.m[i].s) message.inca_internal::__size = base.m[i].s;
@@ -435,7 +436,7 @@ package inca.api {
 			if(notification.modified) $__parseNotification(notification.modified, modified, "modified");
 			if(notification.created) $__parseNotification(notification.created, created, "created");
 
-        	dispatchEvent(new ZimbraNotifyEvent(ZimbraEvent.NOTIFY, created, modified, deleted));	
+        	dispatchEvent(new ZimbraNotifyEvent(ZimbraNotifyEvent.NOTIFY, created, modified, deleted));	
 		}
 		
 		// -->> Namespaced
@@ -455,12 +456,11 @@ package inca.api {
 			req.removeEventListener(Event.COMPLETE, arguments.callee);
 			
 			trace (req.data);
-			var d:* = JSON.decode(req.data);
+			var d:Object = JSON.decode(req.data);
 			$__changeID = Math.max($__changeID, d.Header.context.change.token);
 			if(d.Header.context.refresh != null) setMailboxProps(d.Header.context.refresh);
 			if(d.Header.context.notify != null) parseNotification(d.Header.context.notify[0]);
 			
-			var sResponse:SearchResponse;
 			switch(req.callType){
 				case ZimbraEvent.LOGGED_IN:
 					$__request.Header.context.authToken = d.Body.AuthResponse.authToken;
@@ -473,25 +473,33 @@ package inca.api {
 					}
 					dispatchEvent(new ZimbraEvent(req.callType));
 					break;
+				case "nooprequest":
+					break;
+				case ZimbraSearchEvent.COMPLETE:
+					dispatchEvent(new ZimbraSearchEvent(ZimbraSearchEvent.COMPLETE, buildSearchResponse(d.Body.SearchResponse)));
+					break;
+				case ZimbraEvent.TAG_CREATED:
+					setTagProps((req.ref as ZimbraTag), $__tagHashmap[d.Body.CreateTagResponse.tag[0].id]);
+					(req.ref as ZimbraTag).dispatchEvent(new ZimbraEvent(ZimbraEvent.TAG_CREATED));
+					break;
+				case ZimbraEvent.TAG_MODIFIED:
+					(req.ref as ZimbraTag).inca_internal::__id = -1;
+					setTagProps((req.ref as ZimbraTag), $__tagHashmap[d.Body.TagActionResponse.action.id]);
+					(req.ref as ZimbraTag).dispatchEvent(new ZimbraEvent(ZimbraEvent.TAG_MODIFIED));
+					break;
+				case ZimbraEvent.TAG_REMOVED:
+					(req.ref as ZimbraTag).inca_internal::__id = -1;
+					(req.ref as ZimbraTag).dispatchEvent(new ZimbraEvent(ZimbraEvent.TAG_REMOVED));
+					break;
+				/*
 				case ZimbraEvent.CONVERSATION_MESSAGES_LOADED:
 				case ZimbraEvent.CONVERSATION_LOADED:
 					sResponse = parseSearchResponse(d.Body.SearchConvResponse);
 					dispatchEvent(new ZimbraEvent(req.callType, sResponse));
 					break;
-				case ZimbraEvent.SEARCH:
-					sResponse = parseSearchResponse(d.Body.SearchResponse);
-					dispatchEvent(new ZimbraEvent(req.callType, sResponse));
-					break;
 				case ZimbraEvent.MESSAGE_LOADED:
 					sResponse = parseSearchResponse(d.Body.GetMsgResponse);
 					dispatchEvent(new ZimbraEvent(req.callType, sResponse));
-					break;
-				case "nooprequest":
-					break;
-				case ZimbraEvent.TAG_CREATED:
-					var tag:ZimbraTag = (req.ref as ZimbraTag);
-					var tagBody:Object = d.Body.CreatetagResponse.tag[0];
-					setTagProps(tag, $__tagHashmap[tagBody.id]);
 					break;
 				case ZimbraEvent.FOLDER_CREATED:
 					var folder:ZimbraFolder = (req.ref as ZimbraFolder);
@@ -499,6 +507,7 @@ package inca.api {
 					setFolderProps(folder, $__folderHashmap[folderBody.id]);
 					setParentFolders();
 					break;
+				*/
 			}
 		}
 		

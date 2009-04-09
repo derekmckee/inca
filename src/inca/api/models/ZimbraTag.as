@@ -1,12 +1,14 @@
 package inca.api.models {
 	
+	import flash.events.EventDispatcher;
+	
 	import inca.api.Zimbra;
 	import inca.api.events.ZimbraEvent;
 	import inca.core.inca_internal;
 	
 	use namespace inca_internal;
 	
-	public class ZimbraTag {
+	public class ZimbraTag extends EventDispatcher {
 		
 		public static const BLUE:uint 	= 1;
 		public static const CYAN:uint 	= 2;
@@ -70,7 +72,6 @@ package inca.api.models {
 								}
 							}
 						};
-				$__name = value;
 				$__connector.inca_internal::sendProxiedRequest(body, ZimbraEvent.TAG_MODIFIED, this);
 			}else{
 				throw new Error("Connection Error. You are not logged in.");
@@ -90,7 +91,6 @@ package inca.api.models {
 								}
 							}
 						};
-				$__color = value;
 				$__connector.inca_internal::sendProxiedRequest(body, ZimbraEvent.TAG_MODIFIED, this);
 			}else{
 				throw new Error("Connection Error. You are not logged in.");
