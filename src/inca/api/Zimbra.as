@@ -212,20 +212,36 @@ package inca.api {
 			instance.connector = this;
 			instance.color = data.color || ZimbraTag.ORANGE;
 			instance.name = data.name;
-			instance.inca_internal::__unreadCount = data.unreadCount;
+
+			try{ 
+				instance.inca_internal::__unreadCount = data.u; 
+			}catch(e:ReferenceError){ 
+				instance.inca_internal::__unreadCount = data.unreadCount;
+			}
+			
 			instance.inca_internal::__id = data.id;
 		}
 		
 		private function setFolderProps(instance:ZimbraFolder, data:Object):void{
 			instance.name = data.name;
 			instance.connector = this;
-			instance.inca_internal::__count = data.n;
-			instance.inca_internal::__size = data.s;
 			
-			instance.inca_internal::__unreadCount = data.u || 0;
 			if(data.color != null) instance.color = data.color;
 			instance.parentFolder = new ZimbraFolder();
-			instance.parentFolder.inca_internal::__id = data.l;
+			
+			if(data.name == null) trace ("$$$", JSON.encode(data));
+			
+			try{ 
+				instance.inca_internal::__count = data.n; 
+				instance.inca_internal::__size = data.s;
+				instance.inca_internal::__unreadCount = data.u || 0;
+				instance.parentFolder.inca_internal::__id = data.l;
+			}catch(e:ReferenceError){
+				instance.inca_internal::__count = data.count; 
+				instance.inca_internal::__size = data.size;
+				instance.inca_internal::__unreadCount = data.unreadCount;
+				instance.parentFolder = $__folderHashmap[data.parentFolder.id];
+			}
 			
 			instance.inca_internal::__id = data.id;
 		}
@@ -248,7 +264,6 @@ package inca.api {
 		
 		private function setParentFolders():void{
 			for(var i:uint=0;i<$__mailbox.folders.length;i++){
-				if((($__mailbox.folders[i] as ZimbraFolder).parentFolder as ZimbraFolder).name) continue;
 				($__mailbox.folders[i] as ZimbraFolder).parentFolder = $__folderHashmap[($__mailbox.folders[i] as ZimbraFolder).parentFolder.id];
 			}
 		}
@@ -388,7 +403,7 @@ package inca.api {
 						if(folder_m) folder_m.parentFolder = folder.parentFolder;
 					}
 					
-					if(type == "created") $__tagHashmap[tag.id] = tag;
+					if(type == "created") $__folderHashmap[folder.id] = folder;
 					ret.push(folder);
 				}
 			}
@@ -491,6 +506,24 @@ package inca.api {
 					(req.ref as ZimbraTag).inca_internal::__id = -1;
 					(req.ref as ZimbraTag).dispatchEvent(new ZimbraEvent(ZimbraEvent.TAG_REMOVED));
 					break;
+				case ZimbraEvent.FOLDER_CREATED:
+					setFolderProps((req.ref as ZimbraFolder), $__folderHashmap[d.Body.CreateFolderResponse.folder[0].id]);
+					setParentFolders();
+					(req.ref as ZimbraFolder).dispatchEvent(new ZimbraEvent(ZimbraEvent.FOLDER_CREATED));
+					break;
+				case ZimbraEvent.FOLDER_TRASHED:
+				case ZimbraEvent.FOLDER_EMPTIED:
+				case ZimbraEvent.FOLDER_MOVED:
+				case ZimbraEvent.FOLDER_MODIFIED:
+					(req.ref as ZimbraFolder).inca_internal::__id = -1;
+					setFolderProps((req.ref as ZimbraFolder), $__folderHashmap[d.Body.FolderActionResponse.action.id]);
+					setParentFolders();
+					(req.ref as ZimbraFolder).dispatchEvent(new ZimbraEvent(req.callType));
+					break;
+				case ZimbraEvent.FOLDER_REMOVED:
+					(req.ref as ZimbraFolder).inca_internal::__id = -1;
+					(req.ref as ZimbraFolder).dispatchEvent(new ZimbraEvent(ZimbraEvent.FOLDER_REMOVED));
+					break;
 				/*
 				case ZimbraEvent.CONVERSATION_MESSAGES_LOADED:
 				case ZimbraEvent.CONVERSATION_LOADED:
@@ -500,12 +533,6 @@ package inca.api {
 				case ZimbraEvent.MESSAGE_LOADED:
 					sResponse = parseSearchResponse(d.Body.GetMsgResponse);
 					dispatchEvent(new ZimbraEvent(req.callType, sResponse));
-					break;
-				case ZimbraEvent.FOLDER_CREATED:
-					var folder:ZimbraFolder = (req.ref as ZimbraFolder);
-					var folderBody:Object = d.Body.CreateFolderResponse.folder[0];
-					setFolderProps(folder, $__folderHashmap[folderBody.id]);
-					setParentFolders();
 					break;
 				*/
 			}

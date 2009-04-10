@@ -1,12 +1,14 @@
 package inca.api.models {
 	
+	import flash.events.EventDispatcher;
+	
 	import inca.api.Zimbra;
 	import inca.api.events.ZimbraEvent;
 	import inca.core.inca_internal;
 	
 	use namespace inca_internal;
 	
-	public class ZimbraFolder {
+	public class ZimbraFolder extends EventDispatcher {
 		
 		public static const NONE:uint 	= 0;
 		public static const BLUE:uint	= 1;
