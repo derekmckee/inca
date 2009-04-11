@@ -28,6 +28,7 @@ package inca.api.models {
 		private var $__color:uint = NONE;
 		private var $__unreadCount:uint = 0;
 		private var $__parentFolder:ZimbraFolder;
+		private var $__url:String = "";
 		private var $__connector:Zimbra = new Zimbra();
 		
 		public function ZimbraFolder(){
@@ -40,11 +41,13 @@ package inca.api.models {
 		public function get color():uint{ return $__color; }
 		public function get unreadCount():uint{ return $__unreadCount; }
 		public function get parentFolder():ZimbraFolder{ return $__parentFolder; }
+		public function get url():String{ return $__url; }
 		
 		inca_internal function set __id(value:int):void{ $__id = value; }
 		public function set name(value:String):void{ if($__id == -1) $__name = value; }
 		public function set parentFolder(value:ZimbraFolder):void{ if($__id == -1) $__parentFolder = value; }
 		public function set color(value:uint):void{ if($__id == -1) $__color = value; }
+		public function set url(value:String):void{ if($__id == -1) $__url = value; }
 		inca_internal function set __size(value:uint):void{ $__size = value; }
 		inca_internal function set __count(value:uint):void{ $__count = value; }
 		inca_internal function set __unreadCount(value:uint):void{ $__unreadCount = value; }

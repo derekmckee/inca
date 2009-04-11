@@ -120,6 +120,24 @@ package inca.api {
 			sendRequest(req, ZimbraSearchEvent.COMPLETE);
 		}
 		
+		public function getMessage(id:uint, html:Boolean = false, markAsRead:Boolean = false):ZimbraMessage{
+			var msg:ZimbraMessage = new ZimbraMessage();
+			msg.inca_internal::__id = id;
+			var body:Object = {GetMsgRequest:
+							{
+								_jsns: "urn:zimbraMail",
+								m: {
+									id: id,
+									read: (markAsRead) ? 1: 0,
+									html: (html) ? 1: 0
+								}
+							}
+					};
+			sendProxiedRequest(body, ZimbraEvent.MESSAGE_LOADED, msg);					
+					
+			return msg;
+		}
+		
 		/*
 		public function getMessage(id:int, read:Boolean = true, html:Boolean = false):void{
 			var req:Object = ObjectUtil.clone($__request);
@@ -178,7 +196,7 @@ package inca.api {
 							}
 						};
 			
-			sendRequest(req, "nooprequest");
+			sendRequest(req, "zimbra_nooprequest");
 		}
 		
 		private function $__noOpRequest(event:TimerEvent):void{
@@ -201,7 +219,7 @@ package inca.api {
 			loader.addEventListener(Event.COMPLETE, $__onRequestDone);
 			loader.load(uri);
 			
-			if(callType != "nooprequest" && $__loggedIn){
+			if(callType != "zimbra_nooprequest" && $__loggedIn){
 				$__idle = false;
 				$__idleTimer.reset();
 				$__idleTimer.start();
@@ -229,14 +247,14 @@ package inca.api {
 			if(data.color != null) instance.color = data.color;
 			instance.parentFolder = new ZimbraFolder();
 			
-			if(data.name == null) trace ("$$$", JSON.encode(data));
-			
-			try{ 
+			try{
+				instance.url = data.url || "";
 				instance.inca_internal::__count = data.n; 
 				instance.inca_internal::__size = data.s;
 				instance.inca_internal::__unreadCount = data.u || 0;
 				instance.parentFolder.inca_internal::__id = data.l;
 			}catch(e:ReferenceError){
+				instance.url = data.url || "";
 				instance.inca_internal::__count = data.count; 
 				instance.inca_internal::__size = data.size;
 				instance.inca_internal::__unreadCount = data.unreadCount;
@@ -250,7 +268,7 @@ package inca.api {
 			var fs:Array = origFolders;
 			var folder:ZimbraFolder;
 			for(var i:uint=0;i<fs.length;i++){
-				if(fs[i].view != "message" && fs[i].view != null) continue;
+				if(fs[i].view != "message") continue;
 				
 				folder = new ZimbraFolder();
 				setFolderProps(folder, fs[i]);
@@ -289,28 +307,6 @@ package inca.api {
 			}
 		}
 		
-		private function parseMessageFlags(flags:String):uint{
-			var res:uint = 0;
-			if(flags.indexOf("u") != -1) res = res | ZimbraMessage.UNREAD;
-			if(flags.indexOf("f") != -1) res = res | ZimbraMessage.FLAGGED;
-			if(flags.indexOf("a") != -1) res = res | ZimbraMessage.HAS_ATTACHMENT;
-			if(flags.indexOf("s") != -1) res = res | ZimbraMessage.SENT_BY_ME;
-			if(flags.indexOf("r") != -1) res = res | ZimbraMessage.REPLIED;
-			if(flags.indexOf("w") != -1) res = res | ZimbraMessage.FORWARDED;
-			if(flags.indexOf("d") != -1) res = res | ZimbraMessage.DRAFT;
-			if(flags.indexOf("x") != -1) res = res | ZimbraMessage.DELETED;
-			if(flags.indexOf("n") != -1) res = res | ZimbraMessage.NOTIFICATION_SENT;
-			if(flags.indexOf("!") != -1){
-				res = res | ZimbraMessage.PRIORITY_HIGH;
-			}else if(flags.indexOf("?") != -1){
-				res = res | ZimbraMessage.PRIORITY_LOW;
-			}else{
-				res = res | ZimbraMessage.PRIORITY_NORMAL;
-			}
-			
-			return res;
-		}
-		
 		private function buildSearchResponse(sResponse:Object):ZimbraSearchResponse{
 			var response:ZimbraSearchResponse = new ZimbraSearchResponse();
 			response.inca_internal::__type = (sResponse.m) ? Zimbra.LIST_TYPE_MESSAGE: Zimbra.LIST_TYPE_CONVERSATION;
@@ -326,7 +322,7 @@ package inca.api {
 				if(msgs[i].cid) obj.cid = msgs[i].cid;
 				obj.subject = msgs[i].su;
 				obj.excerpt = msgs[i].fr;
-				obj.flags = parseMessageFlags((msgs[i].f || ""));
+				obj.flags = msgs[i].f || "";
 				obj.date = new Date(msgs[i].d);
 				obj.folder_id = $__folderHashmap[msgs[i].l];
 				obj.size = msgs[i].s;
@@ -340,6 +336,30 @@ package inca.api {
 			}
 			response.inca_internal::__collection = collection;
 			return response;
+		}
+		
+		private function parseMessage(message:ZimbraMessage, data:Object):void{
+			message.inca_internal::__id = data.id;
+			message.inca_internal::__conversation_id = data.cid;
+			message.inca_internal::__subject = data.su;
+			message.inca_internal::__excerpt = data.fr;
+			message.inca_internal::__date = new Date(data.d);
+			message.inca_internal::__size = data.s;
+			message.inca_internal::__flags = data.f || "";
+			
+			var zmInfo:ZimbraMessageInfo;
+			for(var i:uint=0;i<data.e.length;i++){
+				zmInfo = new ZimbraMessageInfo();
+				zmInfo.inca_internal::__name = data.e[i].d;
+				zmInfo.inca_internal::__fullName = data.e[i].p;
+				zmInfo.inca_internal::__email = data.e[i].a;
+				zmInfo.inca_internal::__type = data.e[i].t || "";
+				
+				message.inca_internal::addMessageInfo(zmInfo);
+			}
+			
+			//message.inca_internal::__contentType = data.
+			//message.inca_internal::__content = data.
 		}
 		
 		private function $__parseNotification(base:Object, ret:Array, type:String):void{
@@ -418,7 +438,7 @@ package inca.api {
 					if(base.m[i].su) message.inca_internal::__subject = base.m[i].su;
 					if(base.m[i].fr) message.inca_internal::__excerpt = base.m[i].fr;
 					if(base.m[i].d) message.inca_internal::__date = new Date(base.m[i].d);
-					if(base.m[i].f) message.inca_internal::__flags = parseMessageFlags((base.m[i].f || ""));
+					if(base.m[i].f) message.inca_internal::__flags = base.m[i].f || "";
 					if(base.m[i].content) message.inca_internal::__content = base.m[i].content;
 					if(base.m[i].ct) message.inca_internal::__contentType = base.m[i].ct;
 					if(base.m[i].s) message.inca_internal::__size = base.m[i].s;
@@ -454,8 +474,7 @@ package inca.api {
         	dispatchEvent(new ZimbraNotifyEvent(ZimbraNotifyEvent.NOTIFY, created, modified, deleted));	
 		}
 		
-		// -->> Namespaced
-		
+		// -->> Namespaced		
 		inca_internal function sendProxiedRequest(body:Object, eventType:String, ref:*):void{
 			var req:Object = ObjectUtil.clone($__request);
 			req.Body = body;
@@ -488,7 +507,7 @@ package inca.api {
 					}
 					dispatchEvent(new ZimbraEvent(req.callType));
 					break;
-				case "nooprequest":
+				case "zimbra_nooprequest":
 					break;
 				case ZimbraSearchEvent.COMPLETE:
 					dispatchEvent(new ZimbraSearchEvent(ZimbraSearchEvent.COMPLETE, buildSearchResponse(d.Body.SearchResponse)));
@@ -523,6 +542,10 @@ package inca.api {
 				case ZimbraEvent.FOLDER_REMOVED:
 					(req.ref as ZimbraFolder).inca_internal::__id = -1;
 					(req.ref as ZimbraFolder).dispatchEvent(new ZimbraEvent(ZimbraEvent.FOLDER_REMOVED));
+					break;
+				case ZimbraEvent.MESSAGE_LOADED:
+					parseMessage((req.ref as ZimbraMessage), d.Body.GetMsgResponse.m[0]);
+					(req.ref as ZimbraMessage).dispatchEvent(new ZimbraEvent(ZimbraEvent.MESSAGE_LOADED));
 					break;
 				/*
 				case ZimbraEvent.CONVERSATION_MESSAGES_LOADED:

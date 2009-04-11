@@ -14,10 +14,10 @@ package inca.api.events {
 		public static const FOLDER_TRASHED:String = "zimbra_folder_trashed";
 		public static const FOLDER_REMOVED:String = "zimbra_folder_removed";
 		public static const FOLDER_EMPTIED:String = "zimbra_folder_emptied";
+		public static const MESSAGE_LOADED:String = "zimbra_message_loaded";
 		
 
 		public static const CONVERSATION_LOADED:String = "conversation_loaded";
-		public static const MESSAGE_LOADED:String = "message_loaded";
 		public static const CONVERSATION_MESSAGES_LOADED:String = "conversation_messages_loaded";
 		public static const MESSAGE_CREATED:String = "message_created";
 		public static const MESSAGE_MODIFIED:String = "message_modified";

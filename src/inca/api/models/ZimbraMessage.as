@@ -1,12 +1,14 @@
 package inca.api.models {
 	
+	import flash.events.EventDispatcher;
+	
 	import inca.api.Zimbra;
 	import inca.api.events.ZimbraEvent;
 	import inca.core.inca_internal;
 	
 	use namespace inca_internal;
 	
-	public class ZimbraMessage {
+	public class ZimbraMessage extends EventDispatcher {
 		
 		public static const UNREAD:uint				= 1;
 		public static const FLAGGED:uint			= 2;
@@ -55,7 +57,26 @@ package inca.api.models {
 		inca_internal function set __contentType(value:String):void{ $__contentType = value; }
 		inca_internal function set __size(value:uint):void{ $__size = value; }
 		inca_internal function set __date(value:Date):void{ $__date = value; }
-		inca_internal function set __flags(value:uint):void{ $__flags = value; }
+		inca_internal function set __flags(value:String):void{
+			var res:uint = 0;
+			if(value.indexOf("u") != -1) res = res | ZimbraMessage.UNREAD;
+			if(value.indexOf("f") != -1) res = res | ZimbraMessage.FLAGGED;
+			if(value.indexOf("a") != -1) res = res | ZimbraMessage.HAS_ATTACHMENT;
+			if(value.indexOf("s") != -1) res = res | ZimbraMessage.SENT_BY_ME;
+			if(value.indexOf("r") != -1) res = res | ZimbraMessage.REPLIED;
+			if(value.indexOf("w") != -1) res = res | ZimbraMessage.FORWARDED;
+			if(value.indexOf("d") != -1) res = res | ZimbraMessage.DRAFT;
+			if(value.indexOf("x") != -1) res = res | ZimbraMessage.DELETED;
+			if(value.indexOf("n") != -1) res = res | ZimbraMessage.NOTIFICATION_SENT;
+			if(value.indexOf("!") != -1){
+				res = res | ZimbraMessage.PRIORITY_HIGH;
+			}else if(value.indexOf("?") != -1){
+				res = res | ZimbraMessage.PRIORITY_LOW;
+			}else{
+				res = res | ZimbraMessage.PRIORITY_NORMAL;
+			}
+			$__flags = res;
+		}
 		
 		inca_internal function addMessageInfo(value:ZimbraMessageInfo):void{ $__info.push(value); }	
 		
