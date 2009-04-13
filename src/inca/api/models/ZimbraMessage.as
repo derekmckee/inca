@@ -49,15 +49,19 @@ package inca.api.models {
 		public function get info():Array{ return $__info; }
 		public function get flags():uint{ return $__flags; }
 		
-		inca_internal function set __id(value:int):void{ $__id = value; }
-		inca_internal function set __conversation_id(value:int):void{ $__conversation_id = value; }
+		inca_internal function set __id(value:uint):void{ $__id = value; }
+		inca_internal function set __conversation_id(value:uint):void{ $__conversation_id = value; }
 		inca_internal function set __subject(value:String):void{ $__subject = value; }
 		inca_internal function set __excerpt(value:String):void{ $__excerpt = value; }
+		inca_internal function set __date(value:Date):void{ $__date = value; }
+		inca_internal function set __size(value:uint):void{ $__size = value; }
+		inca_internal function set __flags(value:String):void{ setFlags(value); }
+		inca_internal function addMessageInfo(value:ZimbraMessageInfo):void{ $__info.push(value); }
+		
 		inca_internal function set __content(value:String):void{ $__content = value; }
 		inca_internal function set __contentType(value:String):void{ $__contentType = value; }
-		inca_internal function set __size(value:uint):void{ $__size = value; }
-		inca_internal function set __date(value:Date):void{ $__date = value; }
-		inca_internal function set __flags(value:String):void{
+		
+		private function setFlags(value:String):void{
 			var res:uint = 0;
 			if(value.indexOf("u") != -1) res = res | ZimbraMessage.UNREAD;
 			if(value.indexOf("f") != -1) res = res | ZimbraMessage.FLAGGED;
@@ -78,7 +82,26 @@ package inca.api.models {
 			$__flags = res;
 		}
 		
-		inca_internal function addMessageInfo(value:ZimbraMessageInfo):void{ $__info.push(value); }	
+		inca_internal function decode(data:Object):void{
+			$__id = data.id;
+			$__conversation_id = data.cid;
+			$__subject = data.su;
+			$__excerpt = data.fr;
+			$__date = new Date(data.d);
+			$__size = data.s;
+			setFlags((data.f || ""));
+			
+			var zmInfo:ZimbraMessageInfo;
+			for(var i:uint=0;i<data.e.length;i++){
+				zmInfo = new ZimbraMessageInfo();
+				zmInfo.inca_internal::__name = data.e[i].d;
+				zmInfo.inca_internal::__fullName = data.e[i].p;
+				zmInfo.inca_internal::__email = data.e[i].a;
+				zmInfo.inca_internal::__type = data.e[i].t || "";
+				
+				$__info.push(zmInfo);
+			}
+		}
 		
 		private function setMessageProps(props:Object, eventType:String):void{
 			if($__connector.loggedIn){

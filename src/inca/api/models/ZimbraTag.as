@@ -32,13 +32,22 @@ package inca.api.models {
 		public function get name():String{ return $__name; }
 		public function get unreadCount():uint{ return $__unreadCount; }
 		
-		inca_internal function set __id(value:int):void{ $__id = value; }
 		public function set color(value:uint):void{ if($__id == -1) $__color = value; }
 		public function set name(value:String):void{ if($__id == -1) $__name = value; }
-		inca_internal function set __unreadCount(value:uint):void{ $__unreadCount = value; }
 		
 		public function set connector(value:Zimbra):void{ $__connector = value; }
 		public function get connector():Zimbra{ return $__connector; }
+		
+		inca_internal function set __id(value:uint):void{ $__id = value; }
+		inca_internal function set __unreadCount(value:uint):void{ $__unreadCount = value; }
+		
+		inca_internal function decode(data:Object):void{
+			color = data.color || ZimbraTag.ORANGE;
+			name = data.name;
+			
+			$__unreadCount = data.u || data.unreadCount;
+			$__id = data.id;
+		}
 		
 		public function create():void{
 			if($__id != -1) throw new Error("Server Error. Tag is already on server.");

@@ -226,44 +226,6 @@ package inca.api {
 			}
 		}
 		
-		private function setTagProps(instance:ZimbraTag, data:Object):void{
-			instance.connector = this;
-			instance.color = data.color || ZimbraTag.ORANGE;
-			instance.name = data.name;
-
-			try{ 
-				instance.inca_internal::__unreadCount = data.u; 
-			}catch(e:ReferenceError){ 
-				instance.inca_internal::__unreadCount = data.unreadCount;
-			}
-			
-			instance.inca_internal::__id = data.id;
-		}
-		
-		private function setFolderProps(instance:ZimbraFolder, data:Object):void{
-			instance.name = data.name;
-			instance.connector = this;
-			
-			if(data.color != null) instance.color = data.color;
-			instance.parentFolder = new ZimbraFolder();
-			
-			try{
-				instance.url = data.url || "";
-				instance.inca_internal::__count = data.n; 
-				instance.inca_internal::__size = data.s;
-				instance.inca_internal::__unreadCount = data.u || 0;
-				instance.parentFolder.inca_internal::__id = data.l;
-			}catch(e:ReferenceError){
-				instance.url = data.url || "";
-				instance.inca_internal::__count = data.count; 
-				instance.inca_internal::__size = data.size;
-				instance.inca_internal::__unreadCount = data.unreadCount;
-				instance.parentFolder = $__folderHashmap[data.parentFolder.id];
-			}
-			
-			instance.inca_internal::__id = data.id;
-		}
-		
 		private function setFolders(container:Array, origFolders:Array):void{
 			var fs:Array = origFolders;
 			var folder:ZimbraFolder;
@@ -271,7 +233,7 @@ package inca.api {
 				if(fs[i].view != "message") continue;
 				
 				folder = new ZimbraFolder();
-				setFolderProps(folder, fs[i]);
+				folder.inca_internal::decode(fs[i], $__folderHashmap);
 				
 				container.push(folder);
 				$__folderHashmap[folder.id] = folder;
@@ -298,7 +260,8 @@ package inca.api {
 				var tag:ZimbraTag;
 				for(var i:uint=0;i<ts.length;i++){
 					tag = new ZimbraTag();
-					setTagProps(tag, ts[i]);
+					tag.connector = this;
+					tag.inca_internal::decode(ts[i]);
 					
 					t.push(tag);
 					$__tagHashmap[ts[i].id] = tag;
@@ -336,30 +299,6 @@ package inca.api {
 			}
 			response.inca_internal::__collection = collection;
 			return response;
-		}
-		
-		private function parseMessage(message:ZimbraMessage, data:Object):void{
-			message.inca_internal::__id = data.id;
-			message.inca_internal::__conversation_id = data.cid;
-			message.inca_internal::__subject = data.su;
-			message.inca_internal::__excerpt = data.fr;
-			message.inca_internal::__date = new Date(data.d);
-			message.inca_internal::__size = data.s;
-			message.inca_internal::__flags = data.f || "";
-			
-			var zmInfo:ZimbraMessageInfo;
-			for(var i:uint=0;i<data.e.length;i++){
-				zmInfo = new ZimbraMessageInfo();
-				zmInfo.inca_internal::__name = data.e[i].d;
-				zmInfo.inca_internal::__fullName = data.e[i].p;
-				zmInfo.inca_internal::__email = data.e[i].a;
-				zmInfo.inca_internal::__type = data.e[i].t || "";
-				
-				message.inca_internal::addMessageInfo(zmInfo);
-			}
-			
-			//message.inca_internal::__contentType = data.
-			//message.inca_internal::__content = data.
 		}
 		
 		private function $__parseNotification(base:Object, ret:Array, type:String):void{
@@ -513,12 +452,12 @@ package inca.api {
 					dispatchEvent(new ZimbraSearchEvent(ZimbraSearchEvent.COMPLETE, buildSearchResponse(d.Body.SearchResponse)));
 					break;
 				case ZimbraEvent.TAG_CREATED:
-					setTagProps((req.ref as ZimbraTag), $__tagHashmap[d.Body.CreateTagResponse.tag[0].id]);
+					(req.ref as ZimbraTag).inca_internal::decode($__tagHashmap[d.Body.CreateTagResponse.tag[0].id]);
 					(req.ref as ZimbraTag).dispatchEvent(new ZimbraEvent(ZimbraEvent.TAG_CREATED));
 					break;
 				case ZimbraEvent.TAG_MODIFIED:
 					(req.ref as ZimbraTag).inca_internal::__id = -1;
-					setTagProps((req.ref as ZimbraTag), $__tagHashmap[d.Body.TagActionResponse.action.id]);
+					(req.ref as ZimbraTag).inca_internal::decode($__tagHashmap[d.Body.TagActionResponse.action.id]);
 					(req.ref as ZimbraTag).dispatchEvent(new ZimbraEvent(ZimbraEvent.TAG_MODIFIED));
 					break;
 				case ZimbraEvent.TAG_REMOVED:
@@ -526,7 +465,7 @@ package inca.api {
 					(req.ref as ZimbraTag).dispatchEvent(new ZimbraEvent(ZimbraEvent.TAG_REMOVED));
 					break;
 				case ZimbraEvent.FOLDER_CREATED:
-					setFolderProps((req.ref as ZimbraFolder), $__folderHashmap[d.Body.CreateFolderResponse.folder[0].id]);
+					(req.ref as ZimbraFolder).inca_internal::decode($__folderHashmap[d.Body.CreateFolderResponse.folder[0].id], $__folderHashmap);
 					setParentFolders();
 					(req.ref as ZimbraFolder).dispatchEvent(new ZimbraEvent(ZimbraEvent.FOLDER_CREATED));
 					break;
@@ -535,7 +474,7 @@ package inca.api {
 				case ZimbraEvent.FOLDER_MOVED:
 				case ZimbraEvent.FOLDER_MODIFIED:
 					(req.ref as ZimbraFolder).inca_internal::__id = -1;
-					setFolderProps((req.ref as ZimbraFolder), $__folderHashmap[d.Body.FolderActionResponse.action.id]);
+					(req.ref as ZimbraFolder).inca_internal::decode($__folderHashmap[d.Body.FolderActionResponse.action.id], $__folderHashmap);
 					setParentFolders();
 					(req.ref as ZimbraFolder).dispatchEvent(new ZimbraEvent(req.callType));
 					break;
@@ -544,7 +483,7 @@ package inca.api {
 					(req.ref as ZimbraFolder).dispatchEvent(new ZimbraEvent(ZimbraEvent.FOLDER_REMOVED));
 					break;
 				case ZimbraEvent.MESSAGE_LOADED:
-					parseMessage((req.ref as ZimbraMessage), d.Body.GetMsgResponse.m[0]);
+					(req.ref as ZimbraMessage).inca_internal::decode(d.Body.GetMsgResponse.m[0]);
 					(req.ref as ZimbraMessage).dispatchEvent(new ZimbraEvent(ZimbraEvent.MESSAGE_LOADED));
 					break;
 				/*

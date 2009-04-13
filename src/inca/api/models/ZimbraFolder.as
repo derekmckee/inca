@@ -43,17 +43,31 @@ package inca.api.models {
 		public function get parentFolder():ZimbraFolder{ return $__parentFolder; }
 		public function get url():String{ return $__url; }
 		
-		inca_internal function set __id(value:int):void{ $__id = value; }
 		public function set name(value:String):void{ if($__id == -1) $__name = value; }
 		public function set parentFolder(value:ZimbraFolder):void{ if($__id == -1) $__parentFolder = value; }
 		public function set color(value:uint):void{ if($__id == -1) $__color = value; }
 		public function set url(value:String):void{ if($__id == -1) $__url = value; }
+		
+		public function set connector(value:Zimbra):void{ $__connector = value; }
+		public function get connector():Zimbra{ return $__connector; }
+		
+		inca_internal function set __id(value:uint):void{ $__id = value; }
 		inca_internal function set __size(value:uint):void{ $__size = value; }
 		inca_internal function set __count(value:uint):void{ $__count = value; }
 		inca_internal function set __unreadCount(value:uint):void{ $__unreadCount = value; }
 		
-		public function set connector(value:Zimbra):void{ $__connector = value; }
-		public function get connector():Zimbra{ return $__connector; }
+		inca_internal function decode(data:Object, folderHashmap:Object):void{
+			name = data.name;
+			if(data.color != null) color = data.color;
+			
+			url = data.url || "";
+			$__count = data.n || data.count;
+			$__size = data.s || data.size;
+			$__unreadCount = data.u || data.unreadCount || 0;
+			
+			parentFolder = (data.parentFolder != null && data.parentFolder.id != null) ? folderHashmap[data.parentFolder.id]: new ZimbraFolder();
+			$__id = data.id;
+		}
 		
 		public function create():void{
 			if($__id != -1) throw new Error("Server Error. Folder is already on server.");
