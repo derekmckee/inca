@@ -428,7 +428,6 @@ package inca.api {
 			var req:DynamicURLLoader = (event.target as DynamicURLLoader);
 			req.removeEventListener(Event.COMPLETE, arguments.callee);
 			
-			trace (req.data);
 			var d:Object = JSON.decode(req.data);
 			$__changeID = Math.max($__changeID, d.Header.context.change.token);
 			if(d.Header.context.refresh != null) setMailboxProps(d.Header.context.refresh);

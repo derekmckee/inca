@@ -56,10 +56,9 @@ package inca.api.models {
 		inca_internal function set __date(value:Date):void{ $__date = value; }
 		inca_internal function set __size(value:uint):void{ $__size = value; }
 		inca_internal function set __flags(value:String):void{ setFlags(value); }
-		inca_internal function addMessageInfo(value:ZimbraMessageInfo):void{ $__info.push(value); }
-		
 		inca_internal function set __content(value:String):void{ $__content = value; }
 		inca_internal function set __contentType(value:String):void{ $__contentType = value; }
+		inca_internal function addMessageInfo(value:ZimbraMessageInfo):void{ $__info.push(value); }
 		
 		private function setFlags(value:String):void{
 			var res:uint = 0;
@@ -82,6 +81,24 @@ package inca.api.models {
 			$__flags = res;
 		}
 		
+		private function getMainMimePart(obj:Array):Object{
+			var res:Object;
+			for(var i:uint=0;i<obj.length;i++){
+				if(obj[i].body != null && obj[i].body){
+					res = obj[i];
+					break;
+				}
+				if(obj[i].mp){
+					var tmp:Object = arguments.callee(obj[i].mp);
+					if(tmp != null){
+						res = tmp;
+						break;
+					}
+				}
+			}
+			return res;
+		}
+		
 		inca_internal function decode(data:Object):void{
 			$__id = data.id;
 			$__conversation_id = data.cid;
@@ -89,6 +106,11 @@ package inca.api.models {
 			$__excerpt = data.fr;
 			$__date = new Date(data.d);
 			$__size = data.s;
+			var mmp:Object = getMainMimePart(data.mp);
+			if(mmp != null){
+				$__content = mmp.content;
+				$__contentType = mmp.ct;
+			}
 			setFlags((data.f || ""));
 			
 			var zmInfo:ZimbraMessageInfo;
