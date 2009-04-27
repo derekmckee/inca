@@ -25,6 +25,7 @@ package inca.api.models {
 		
 		private var $__id:int = -1;
 		private var $__conversation_id:int = -1;
+		private var $__folder:ZimbraFolder;
 		private var $__subject:String = "";
 		private var $__excerpt:String = "";
 		private var $__content:String = "";
@@ -33,6 +34,7 @@ package inca.api.models {
 		private var $__date:Date = new Date();
 		private var $__info:Array = new Array();
 		private var $__flags:uint = 0;
+		private var $__tags:Array = new Array();
 		private var $__connector:Zimbra = new Zimbra();
 		
 		public function ZimbraMessage(){
@@ -40,6 +42,7 @@ package inca.api.models {
 		
 		public function get id():int{ return $__id; }
 		public function get conversation_id():int{ return $__conversation_id; }
+		public function get folder():ZimbraFolder{ return $__folder; }
 		public function get subject():String{ return $__subject; }
 		public function get excerpt():String{ return $__excerpt; }
 		public function get content():String{ return $__content; }
@@ -48,9 +51,11 @@ package inca.api.models {
 		public function get date():Date{ return $__date; }
 		public function get info():Array{ return $__info; }
 		public function get flags():uint{ return $__flags; }
+		public function get tags():Array{ return $__tags; }
 		
 		inca_internal function set __id(value:uint):void{ $__id = value; }
 		inca_internal function set __conversation_id(value:uint):void{ $__conversation_id = value; }
+		inca_internal function set __folder(value:ZimbraFolder):void{ $__folder = value; }
 		inca_internal function set __subject(value:String):void{ $__subject = value; }
 		inca_internal function set __excerpt(value:String):void{ $__excerpt = value; }
 		inca_internal function set __date(value:Date):void{ $__date = value; }
@@ -81,6 +86,15 @@ package inca.api.models {
 			$__flags = res;
 		}
 		
+		inca_internal function setTags(value:String, tagsHashmap:Object):void{
+			var res:Array = new Array();
+			var tgs:Array = value.split(",");
+			for(var i:uint=0;i<tgs.length;i++){
+				res.push(tagsHashmap[tgs[i]]);
+			}
+			$__tags = res;
+		}
+		
 		private function getMainMimePart(obj:Array):Object{
 			var res:Object;
 			for(var i:uint=0;i<obj.length;i++){
@@ -99,9 +113,10 @@ package inca.api.models {
 			return res;
 		}
 		
-		inca_internal function decode(data:Object):void{
+		inca_internal function decode(data:Object, folderHashmap:Object, tagsHashmap:Object):void{
 			$__id = data.id;
 			$__conversation_id = data.cid;
+			$__folder = folderHashmap[data.l];
 			$__subject = data.su;
 			$__excerpt = data.fr;
 			$__date = new Date(data.d);
@@ -112,6 +127,7 @@ package inca.api.models {
 				$__contentType = mmp.ct;
 			}
 			setFlags((data.f || ""));
+			setTags((data.t || ""), tagsHashmap);
 			
 			var zmInfo:ZimbraMessageInfo;
 			for(var i:uint=0;i<data.e.length;i++){
@@ -154,18 +170,18 @@ package inca.api.models {
 		
 		public function markMessageAsSpam():void{
 			if($__id == -1) throw new Error("Server Error. Message is not on the server");
-			setMessageProps({id: $__id, op: "spam"}, ZimbraEvent.MESSAGE_MODIFIED);
+			setMessageProps({id: $__id, op: "spam"}, ZimbraEvent.MESSAGE_MOVED);
 		}
 		
 		public function markMessageAsNotSpam():void{
 			if($__id == -1) throw new Error("Server Error. Message is not on the server");
-			setMessageProps({id: $__id, op: "!spam"}, ZimbraEvent.MESSAGE_MODIFIED);
+			setMessageProps({id: $__id, op: "!spam"}, ZimbraEvent.MESSAGE_MOVED);
 		}
 		
 		public function moveMessage(folder:ZimbraFolder):void{
 			if($__id == -1) throw new Error("Server Error. Message is not on the server");
 			if(folder.id == -1) throw new Error("Server Error. Folder is not on the server");
-			setMessageProps({id: $__id, op: "move", l: folder.id}, ZimbraEvent.MESSAGE_MODIFIED);
+			setMessageProps({id: $__id, op: "move", l: folder.id}, ZimbraEvent.MESSAGE_MOVED);
 		}
 		
 		public function removeMessage():void{
@@ -186,13 +202,17 @@ package inca.api.models {
 		public function tagMessage(tag:ZimbraTag):void{
 			if($__id == -1) throw new Error("Server Error. Message is not on the server");
 			if(tag.id == -1) throw new Error("Server Error. Tag is not on the server");
-			setMessageProps({id: $__id, op: "tag", tag: tag.id}, ZimbraEvent.MESSAGE_MODIFIED);
+			setMessageProps({id: $__id, op: "tag", tag: tag.id}, ZimbraEvent.MESSAGE_TAGGED);
 		}
 		
-		public function untagMessage(tag:ZimbraTag):void{
+		public function untagMessage(tag:ZimbraTag = null):void{
 			if($__id == -1) throw new Error("Server Error. Message is not on the server");
 			if(tag.id == -1) throw new Error("Server Error. Tag is not on the server");
-			setMessageProps({id: $__id, op: "!tag", tag: tag.id}, ZimbraEvent.MESSAGE_MODIFIED);
+			if(tag != null){
+				setMessageProps({id: $__id, op: "!tag", tag: tag.id}, ZimbraEvent.MESSAGE_TAGGED);
+			}else{
+				setMessageProps({id: $__id, op: "update", t: ""}, ZimbraEvent.MESSAGE_TAGGED);
+			}
 		}
 		
 		/*

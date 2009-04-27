@@ -433,6 +433,7 @@ package inca.api {
 			if(d.Header.context.refresh != null) setMailboxProps(d.Header.context.refresh);
 			if(d.Header.context.notify != null) parseNotification(d.Header.context.notify[0]);
 			
+			var i:uint;			
 			switch(req.callType){
 				case ZimbraEvent.LOGGED_IN:
 					$__request.Header.context.authToken = d.Body.AuthResponse.authToken;
@@ -482,17 +483,30 @@ package inca.api {
 					(req.ref as ZimbraFolder).dispatchEvent(new ZimbraEvent(ZimbraEvent.FOLDER_REMOVED));
 					break;
 				case ZimbraEvent.MESSAGE_LOADED:
-					(req.ref as ZimbraMessage).inca_internal::decode(d.Body.GetMsgResponse.m[0]);
+					(req.ref as ZimbraMessage).inca_internal::decode(d.Body.GetMsgResponse.m[0], $__folderHashmap, $__tagHashmap);
 					(req.ref as ZimbraMessage).dispatchEvent(new ZimbraEvent(ZimbraEvent.MESSAGE_LOADED));
+					break;
+				case ZimbraEvent.MESSAGE_MODIFIED:
+				case ZimbraEvent.MESSAGE_MOVED:
+				case ZimbraEvent.MESSAGE_TAGGED:
+					for(i=0;i<d.Header.context.notify[0].modified.m.length;i++){
+						if((req.ref as ZimbraMessage).id == d.Header.context.notify[0].modified.m[i].id){
+							if(req.callType == ZimbraEvent.MESSAGE_MODIFIED) (req.ref as ZimbraMessage).inca_internal::__flags = d.Header.context.notify[0].modified.m[i].f || "";
+							if(req.callType == ZimbraEvent.MESSAGE_MOVED) (req.ref as ZimbraMessage).inca_internal::__folder = $__folderHashmap[d.Header.context.notify[0].modified.m[i].l];
+							if(req.callType == ZimbraEvent.MESSAGE_TAGGED) (req.ref as ZimbraMessage).inca_internal::setTags(d.Header.context.notify[0].modified.m[i].t, $__tagHashmap);
+							(req.ref as ZimbraMessage).dispatchEvent(new ZimbraEvent(req.callType));
+							break;
+						}
+					}
+					break;
+				case ZimbraEvent.MESSAGE_REMOVED:
+					(req.ref as ZimbraMessage).inca_internal::__id = -1;
+					(req.ref as ZimbraMessage).dispatchEvent(new ZimbraEvent(ZimbraEvent.MESSAGE_REMOVED));
 					break;
 				/*
 				case ZimbraEvent.CONVERSATION_MESSAGES_LOADED:
 				case ZimbraEvent.CONVERSATION_LOADED:
 					sResponse = parseSearchResponse(d.Body.SearchConvResponse);
-					dispatchEvent(new ZimbraEvent(req.callType, sResponse));
-					break;
-				case ZimbraEvent.MESSAGE_LOADED:
-					sResponse = parseSearchResponse(d.Body.GetMsgResponse);
 					dispatchEvent(new ZimbraEvent(req.callType, sResponse));
 					break;
 				*/
