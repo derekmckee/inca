@@ -39,6 +39,12 @@ package inca.api.models {
 			if(value.indexOf("s") != -1) res = res | ZimbraMessageInfo.TYPE_SENDER;
 			$__type = res;
 		}
+		inca_internal function decode(data:Object):void{
+			$__name = data.d;
+			$__fullName = data.p;
+			$__email = data.a;
+			__type = data.t || "";
+		}
 
 	}
 	

@@ -52,6 +52,7 @@ package inca.api.models {
 		public function get info():Array{ return $__info; }
 		public function get flags():uint{ return $__flags; }
 		public function get tags():Array{ return $__tags; }
+		public function get connector():Zimbra{ return $__connector; }
 		
 		inca_internal function set __id(value:uint):void{ $__id = value; }
 		inca_internal function set __conversation_id(value:uint):void{ $__conversation_id = value; }
@@ -63,6 +64,7 @@ package inca.api.models {
 		inca_internal function set __flags(value:String):void{ setFlags(value); }
 		inca_internal function set __content(value:String):void{ $__content = value; }
 		inca_internal function set __contentType(value:String):void{ $__contentType = value; }
+		public function set connector(value:Zimbra):void{ $__connector = value; }
 		inca_internal function addMessageInfo(value:ZimbraMessageInfo):void{ $__info.push(value); }
 		
 		private function setFlags(value:String):void{
@@ -132,10 +134,7 @@ package inca.api.models {
 			var zmInfo:ZimbraMessageInfo;
 			for(var i:uint=0;i<data.e.length;i++){
 				zmInfo = new ZimbraMessageInfo();
-				zmInfo.inca_internal::__name = data.e[i].d;
-				zmInfo.inca_internal::__fullName = data.e[i].p;
-				zmInfo.inca_internal::__email = data.e[i].a;
-				zmInfo.inca_internal::__type = data.e[i].t || "";
+				zmInfo.inca_internal::decode(data.e[i]);
 				
 				$__info.push(zmInfo);
 			}
@@ -155,57 +154,54 @@ package inca.api.models {
 			}
 		}
 		
-		public function set connector(value:Zimbra):void{ $__connector = value; }
-		public function get connector():Zimbra{ return $__connector; }
-		
-		public function markMessageAsRead():void{
+		public function markAsRead():void{
 			if($__id == -1) throw new Error("Server Error. Message is not on the server");
 			setMessageProps({id: $__id, op: "read"}, ZimbraEvent.MESSAGE_MODIFIED);
 		}
 		
-		public function markMessageAsUnread():void{
+		public function markAsUnread():void{
 			if($__id == -1) throw new Error("Server Error. Message is not on the server");
 			setMessageProps({id: $__id, op: "!read"}, ZimbraEvent.MESSAGE_MODIFIED);
 		}
 		
-		public function markMessageAsSpam():void{
+		public function markAsSpam():void{
 			if($__id == -1) throw new Error("Server Error. Message is not on the server");
 			setMessageProps({id: $__id, op: "spam"}, ZimbraEvent.MESSAGE_MOVED);
 		}
 		
-		public function markMessageAsNotSpam():void{
+		public function markAsNotSpam():void{
 			if($__id == -1) throw new Error("Server Error. Message is not on the server");
 			setMessageProps({id: $__id, op: "!spam"}, ZimbraEvent.MESSAGE_MOVED);
 		}
 		
-		public function moveMessage(folder:ZimbraFolder):void{
+		public function move(folder:ZimbraFolder):void{
 			if($__id == -1) throw new Error("Server Error. Message is not on the server");
 			if(folder.id == -1) throw new Error("Server Error. Folder is not on the server");
 			setMessageProps({id: $__id, op: "move", l: folder.id}, ZimbraEvent.MESSAGE_MOVED);
 		}
 		
-		public function removeMessage():void{
+		public function remove():void{
 			if($__id == -1) throw new Error("Server Error. Message is not on the server");
 			setMessageProps({id: $__id, op: "move", l: 3}, ZimbraEvent.MESSAGE_REMOVED);
 		}
 		
-		public function flagMessage():void{
+		public function flag():void{
 			if($__id == -1) throw new Error("Server Error. Message is not on the server");
 			setMessageProps({id: $__id, op: "flag"}, ZimbraEvent.MESSAGE_MODIFIED);
 		}
 		
-		public function unflagMessage():void{
+		public function unflag():void{
 			if($__id == -1) throw new Error("Server Error. Message is not on the server");
 			setMessageProps({id: $__id, op: "!flag"}, ZimbraEvent.MESSAGE_MODIFIED);
 		}
 		
-		public function tagMessage(tag:ZimbraTag):void{
+		public function tag(tag:ZimbraTag):void{
 			if($__id == -1) throw new Error("Server Error. Message is not on the server");
 			if(tag.id == -1) throw new Error("Server Error. Tag is not on the server");
 			setMessageProps({id: $__id, op: "tag", tag: tag.id}, ZimbraEvent.MESSAGE_TAGGED);
 		}
 		
-		public function untagMessage(tag:ZimbraTag = null):void{
+		public function untag(tag:ZimbraTag = null):void{
 			if($__id == -1) throw new Error("Server Error. Message is not on the server");
 			if(tag.id == -1) throw new Error("Server Error. Tag is not on the server");
 			if(tag != null){
@@ -214,18 +210,6 @@ package inca.api.models {
 				setMessageProps({id: $__id, op: "update", t: ""}, ZimbraEvent.MESSAGE_TAGGED);
 			}
 		}
-		
-		/*
-		{"Header":{"context":{"_jsns":"urn:zimbra","userAgent":{"name":"ZimbraWebClient - FF3.0 (Mac)","version"
-:"5.0.13_GA_2791.RHEL5_64"},"sessionId":{"_content":1300,"id":1300},"account":{"_content":"inca@funciton
-.com","by":"name"},"format":{"type":"js"},"authToken":"0_3300680fc6c2d1f745446c273472b1c4d09b80c5_69
-643d33363a30313232393937622d336336642d343562342d613438642d6232363461656434303939383b6578703d31333a313233353631343338303837343b747970653d363a7a696d6272613b"
-}},"Body":{"SendMsgRequest":{"_jsns":"urn:zimbraMail","suid":1235441778805,"m":{"idnt":"0122997b-3c6d-45b4-a48d-b264aed40998"
-,"f":"!","e":[{"t":"t","a":"fernando.florez@gmail.com","p":"fernando"},{"t":"c","a":"fernando.florez
-@gmail.com","p":"fernando"},{"t":"b","a":"fernando.florez@gmail.com","p":"fernando"},{"t":"f","a":"inca
-@funciton.com","p":"inca inca"}],"su":{"_content":"prueb"},"mp":[{"ct":"text/plain","content":{"_content"
-:"mensajeeee"}}]}}}}
-	SEND*/
 
 	}
 	

@@ -138,54 +138,21 @@ package inca.api {
 			return msg;
 		}
 		
-		/*
-		public function getMessage(id:int, read:Boolean = true, html:Boolean = false):void{
-			var req:Object = ObjectUtil.clone($__request);
-			req.Body = {GetMsgRequest:
+		public function getConversation(id:int, html:Boolean = false):ZimbraConversation{
+			var conv:ZimbraConversation = new ZimbraConversation();
+			conv.inca_internal::__id = id;
+			var body:Object = {GetConvRequest: {c:
 							{
-								_jsns: "urn:zimbraMail",
-								m: {
-									id: id,
-									read: (read) ? 1: 0,
-									html: (html) ? 1: 0
-								}
-							}
-					};
-			
-			//sendRequest(req, ZimbraEvent.MESSAGE_LOADED);
-		}
-		
-		public function getConversation(cid:int, fid:int, read:Boolean = true, html:Boolean = false):void{
-			var req:Object = ObjectUtil.clone($__request);
-			req.Body = {SearchConvRequest:
-							{
-								_jsns: "urn:zimbraMail",
-								sortBy: "dateDesc",
-								cid: cid,
-								read: (read) ? 1: 0,
-								fetch: fid,
+								id: id,
 								html: (html) ? 1: 0
-							}
-					};
-			
-			//sendRequest(req, ZimbraEvent.CONVERSATION_LOADED);
-		}
-		
-		public function getMessagesFromConversation(cid:int, limit:uint = 25, offset:uint = 0):void{
-			var req:Object = ObjectUtil.clone($__request);
-			req.Body = {SearchConvRequest:
-							{
-								_jsns: "urn:zimbraMail",
-								sortBy: "dateDesc",
-								offset: offset,
-								limit: limit,
-								cid: cid
-							}
+							},
+							_jsns: "urn:zimbraMail"
 						}
+					};
+			sendProxiedRequest(body, ZimbraEvent.CONVERSATION_LOADED, conv);
 			
-			//sendRequest(req, ZimbraEvent.CONVERSATION_MESSAGES_LOADED);
+			return conv;
 		}
-		*/
 		
 		// -->> Private Methods
 		private function noOpRequest():void{
@@ -433,6 +400,8 @@ package inca.api {
 			if(d.Header.context.refresh != null) setMailboxProps(d.Header.context.refresh);
 			if(d.Header.context.notify != null) parseNotification(d.Header.context.notify[0]);
 			
+			trace (req.data);
+			
 			var i:uint;			
 			switch(req.callType){
 				case ZimbraEvent.LOGGED_IN:
@@ -503,13 +472,33 @@ package inca.api {
 					(req.ref as ZimbraMessage).inca_internal::__id = -1;
 					(req.ref as ZimbraMessage).dispatchEvent(new ZimbraEvent(ZimbraEvent.MESSAGE_REMOVED));
 					break;
-				/*
-				case ZimbraEvent.CONVERSATION_MESSAGES_LOADED:
 				case ZimbraEvent.CONVERSATION_LOADED:
-					sResponse = parseSearchResponse(d.Body.SearchConvResponse);
-					dispatchEvent(new ZimbraEvent(req.callType, sResponse));
+					(req.ref as ZimbraConversation).inca_internal::decode(d.GetConvResponse.c[0]);
+					(req.ref as ZimbraConversation).dispatchEvent(new ZimbraEvent(ZimbraEvent.CONVERSATION_LOADED));
 					break;
-				*/
+				case ZimbraEvent.CONVERSATION_MODIFIED:
+				case ZimbraEvent.CONVERSATION_MOVED:
+				case ZimbraEvent.CONVERSATION_TAGGED:
+					for(i=0;i<d.Header.context.notify[0].modified.m.length;i++){
+						try{
+							if(req.callType == ZimbraEvent.CONVERSATION_MODIFIED) (req.ref as ZimbraConversation).getMessage(d.Header.context.notify[0].modified.m[i].id).inca_internal::__flags = d.Header.context.notify[0].modified.m[i].f || "";
+							if(req.callType == ZimbraEvent.CONVERSATION_MOVED) (req.ref as ZimbraConversation).getMessage(d.Header.context.notify[0].modified.m[i].id).inca_internal::__folder = $__folderHashmap[d.Header.context.notify[0].modified.m[i].l];
+							if(req.callType == ZimbraEvent.CONVERSATION_TAGGED) (req.ref as ZimbraConversation).getMessage(d.Header.context.notify[0].modified.m[i].id).inca_internal::setTags(d.Header.context.notify[0].modified.m[i].t, $__tagHashmap);
+						}catch(e:Error){ 
+							// ...
+						}
+					}
+					for(i=0;i<d.Header.context.notify[0].modified.c.length;i++){
+						if((req.ref as ZimbraConversation).id == d.Header.context.notify[0].modified.c[i].id){
+							(req.ref as ZimbraConversation).inca_internal::__flags = d.Header.context.notify[0].modified.c[i].f || "";
+							(req.ref as ZimbraConversation).dispatchEvent(new ZimbraEvent(req.callType));
+						}
+					}
+					break;
+				case ZimbraEvent.CONVERSATION_REMOVED:
+					(req.ref as ZimbraConversation).inca_internal::__id = -1;
+					(req.ref as ZimbraConversation).dispatchEvent(new ZimbraEvent(ZimbraEvent.CONVERSATION_REMOVED));
+					break;
 			}
 		}
 		
