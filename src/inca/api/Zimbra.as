@@ -183,7 +183,7 @@ package inca.api {
 			var loader:DynamicURLLoader = new DynamicURLLoader();
 			loader.callType = callType;
 			if(ref) loader.ref = ref;
-			loader.addEventListener(Event.COMPLETE, $__onRequestDone);
+			loader.addEventListener(Event.COMPLETE, $__onRequestDone, false, 0, true);
 			loader.load(uri);
 			
 			if(callType != "zimbra_nooprequest" && $__loggedIn){
@@ -410,7 +410,7 @@ package inca.api {
 					$__loggedIn = true;
 					if(!$__idleTimer){
 						$__idleTimer = new Timer(NoOpRequestTime);
-						$__idleTimer.addEventListener(TimerEvent.TIMER, $__noOpRequest);
+						$__idleTimer.addEventListener(TimerEvent.TIMER, $__noOpRequest, false, 0, true);
 						$__idleTimer.start();
 					}
 					dispatchEvent(new ZimbraEvent(req.callType));

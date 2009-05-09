@@ -10,19 +10,6 @@ package inca.api.models {
 	
 	public class ZimbraMessage extends EventDispatcher {
 		
-		public static const UNREAD:uint				= 1;
-		public static const FLAGGED:uint			= 2;
-		public static const HAS_ATTACHMENT:uint		= 4;
-		public static const SENT_BY_ME:uint			= 8;
-		public static const REPLIED:uint			= 16;
-		public static const FORWARDED:uint			= 32;
-		public static const DRAFT:uint				= 64;
-		public static const DELETED:uint			= 128;
-		public static const NOTIFICATION_SENT:uint	= 256;
-		public static const PRIORITY_HIGH:uint		= 512;
-		public static const PRIORITY_NORMAL:uint	= 1024;
-		public static const PRIORITY_LOW:uint		= 2048;
-		
 		private var $__id:int = -1;
 		private var $__conversation_id:int = -1;
 		private var $__folder:ZimbraFolder;
@@ -69,21 +56,21 @@ package inca.api.models {
 		
 		private function setFlags(value:String):void{
 			var res:uint = 0;
-			if(value.indexOf("u") != -1) res = res | ZimbraMessage.UNREAD;
-			if(value.indexOf("f") != -1) res = res | ZimbraMessage.FLAGGED;
-			if(value.indexOf("a") != -1) res = res | ZimbraMessage.HAS_ATTACHMENT;
-			if(value.indexOf("s") != -1) res = res | ZimbraMessage.SENT_BY_ME;
-			if(value.indexOf("r") != -1) res = res | ZimbraMessage.REPLIED;
-			if(value.indexOf("w") != -1) res = res | ZimbraMessage.FORWARDED;
-			if(value.indexOf("d") != -1) res = res | ZimbraMessage.DRAFT;
-			if(value.indexOf("x") != -1) res = res | ZimbraMessage.DELETED;
-			if(value.indexOf("n") != -1) res = res | ZimbraMessage.NOTIFICATION_SENT;
+			if(value.indexOf("u") != -1) res = res | ZimbraFlag.UNREAD;
+			if(value.indexOf("f") != -1) res = res | ZimbraFlag.FLAGGED;
+			if(value.indexOf("a") != -1) res = res | ZimbraFlag.HAS_ATTACHMENT;
+			if(value.indexOf("s") != -1) res = res | ZimbraFlag.SENT_BY_ME;
+			if(value.indexOf("r") != -1) res = res | ZimbraFlag.REPLIED;
+			if(value.indexOf("w") != -1) res = res | ZimbraFlag.FORWARDED;
+			if(value.indexOf("d") != -1) res = res | ZimbraFlag.DRAFT;
+			if(value.indexOf("x") != -1) res = res | ZimbraFlag.DELETED;
+			if(value.indexOf("n") != -1) res = res | ZimbraFlag.NOTIFICATION_SENT;
 			if(value.indexOf("!") != -1){
-				res = res | ZimbraMessage.PRIORITY_HIGH;
+				res = res | ZimbraFlag.PRIORITY_HIGH;
 			}else if(value.indexOf("?") != -1){
-				res = res | ZimbraMessage.PRIORITY_LOW;
+				res = res | ZimbraFlag.PRIORITY_LOW;
 			}else{
-				res = res | ZimbraMessage.PRIORITY_NORMAL;
+				res = res | ZimbraFlag.PRIORITY_NORMAL;
 			}
 			$__flags = res;
 		}

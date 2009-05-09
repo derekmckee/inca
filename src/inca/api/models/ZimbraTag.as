@@ -10,14 +10,6 @@ package inca.api.models {
 	
 	public class ZimbraTag extends EventDispatcher {
 		
-		public static const BLUE:uint 	= 1;
-		public static const CYAN:uint 	= 2;
-		public static const GREEN:uint 	= 3;
-		public static const PURPLE:uint = 4;
-		public static const RED:uint 	= 5;
-		public static const YELLOW:uint = 6;
-		public static const ORANGE:uint = 9;
-		
 		private var $__id:int = -1;
 		private var $__color:uint;
 		private var $__name:String;
@@ -42,7 +34,7 @@ package inca.api.models {
 		inca_internal function set __unreadCount(value:uint):void{ $__unreadCount = value; }
 		
 		inca_internal function decode(data:Object):void{
-			color = data.color || ZimbraTag.ORANGE;
+			color = data.color || ZimbraColor.ORANGE;
 			name = data.name;
 			
 			$__unreadCount = data.u || data.unreadCount;
@@ -58,7 +50,7 @@ package inca.api.models {
 								_jsns: "urn:zimbraMail",
 								tag: {
 									name: $__name,
-									color: ($__color || ZimbraTag.ORANGE)
+									color: ($__color || ZimbraColor.ORANGE)
 								}
 							}
 						};
