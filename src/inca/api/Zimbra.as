@@ -9,6 +9,7 @@ package inca.api {
 	
 	import inca.api.events.*;
 	import inca.api.models.*;
+	import inca.api.errors.*;
 	import inca.core.inca_internal;
 	import inca.net.DynamicURLLoader;
 	import inca.serialization.json.JSON;
@@ -61,7 +62,7 @@ package inca.api {
 		
 		public function set server(value:String):void{
 			if(StringUtil.beginsWith(value, "http://", true) || StringUtil.beginsWith(value, "https://", true)){
-				throw new Error("Server format error. Protocol should not be included");
+				throw new ZimbraError(ZimbraError.e10001, 10001);
 			}
 			if(StringUtil.endsWith(value, "/", true)) value = value.substring(0, value.length - 2);
 			$__server = StringUtil.trim(value);
@@ -82,12 +83,12 @@ package inca.api {
 		// -->> Public Methods
 		public function getTag(id:uint):ZimbraTag{
 			if($__tagHashmap[id] != null) return $__tagHashmap[id];
-			throw new Error("Request error. Tag id not found on server.");
+			throw new ZimbraError(ZimbraError.e10002, 10002);
 		}
 		
 		public function getFolder(id:uint):ZimbraFolder{
 			if($__folderHashmap[id] != null) return $__folderHashmap[id];
-			throw new Error("Request error. Folder id not found on server.");
+			throw new ZimbraError(ZimbraError.e10003, 10003);
 		}
 		
 		public function login():void{
@@ -172,7 +173,7 @@ package inca.api {
 		}
 		
 		private function sendRequest(data:Object, callType:String, ref:* = null):void{
-			if(!$__loggedIn && data.Body.AuthRequest == null) throw new Error("Connection Error. You are not logged in.");
+			if(!$__loggedIn && data.Body.AuthRequest == null) throw new ZimbraError(ZimbraError.e10004, 10004);
 
 			if($__changeID) data.Header.context.change = {type: "new", token: $__changeID};
 			if($__notificationID) data.Header.context.notify = {seq: $__notificationID};

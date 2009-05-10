@@ -3,6 +3,7 @@ package inca.api.models {
 	import flash.events.EventDispatcher;
 	
 	import inca.api.Zimbra;
+	import inca.api.errors.*;
 	import inca.api.events.ZimbraEvent;
 	import inca.core.inca_internal;
 	
@@ -83,74 +84,74 @@ package inca.api.models {
 						};
 				$__connector.inca_internal::sendProxiedRequest(body, eventType, this);
 			}else{
-				throw new Error("Connection Error. You are not logged in.");
+				throw new ZimbraError(ZimbraError.e10004, 10004);
 			}
 		}
 		
 		public function getMessage(id:uint):ZimbraMessage{
-			if(!$__connector.loggedIn) throw new Error("Connection Error. You are not logged in.");
-			if($__messageHashmap[id] == null) throw new Error("Request error. Message id not found on this conversation.");
+			if(!$__connector.loggedIn) throw new ZimbraError(ZimbraError.e10004, 10004);
+			if($__messageHashmap[id] == null) throw new ZimbraError(ZimbraError.e10005, 10005);
 			if(!($__messages[$__messageHashmap[id]] is ZimbraMessage)) $__messages[$__messageHashmap[id]] = $__connector.getMessage(id);
 			return $__messages[$__messageHashmap[id]];
 		}
 		
 		public function downloadMessages():void{
-			if(!$__connector.loggedIn) throw new Error("Connection Error. You are not logged in.");
+			if(!$__connector.loggedIn) throw new ZimbraError(ZimbraError.e10004, 10004);
 			for(var i:uint=0;i<$__messages.length;i++){
 				$__messages[i] = $__connector.getMessage($__messages[i].id);
 			}
 		}
 		
 		public function markAsRead():void{
-			if($__id == -1) throw new Error("Server Error. Conversation is not on the server");
+			if($__id == -1) throw new ZimbraError(ZimbraError.e10006, 10006);
 			setConversationProps({id: $__id, op: "read"}, ZimbraEvent.CONVERSATION_MODIFIED);
 		}	
 		
 		public function markAsUnread():void{
-			if($__id == -1) throw new Error("Server Error. Conversation is not on the server");
+			if($__id == -1) throw new ZimbraError(ZimbraError.e10006, 10006);
 			setConversationProps({id: $__id, op: "!read"}, ZimbraEvent.CONVERSATION_MODIFIED);
 		}	
 		
 		public function markAsSpam():void{
-			if($__id == -1) throw new Error("Server Error. Conversation is not on the server");
+			if($__id == -1) throw new ZimbraError(ZimbraError.e10006, 10006);
 			setConversationProps({id: $__id, op: "spam"}, ZimbraEvent.CONVERSATION_MOVED);
 		}
 		
 		public function markAsNotSpam():void{
-			if($__id == -1) throw new Error("Server Error. Conversation is not on the server");
+			if($__id == -1) throw new ZimbraError(ZimbraError.e10006, 10006);
 			setConversationProps({id: $__id, op: "!spam"}, ZimbraEvent.CONVERSATION_MOVED);
 		}
 		
 		public function move(folder:ZimbraFolder):void{
-			if($__id == -1) throw new Error("Server Error. Conversation is not on the server");
-			if(folder.id == -1) throw new Error("Server Error. Folder is not on the server");
+			if($__id == -1) throw new ZimbraError(ZimbraError.e10006, 10006);
+			if(folder.id == -1) throw new ZimbraError(ZimbraError.e10003, 10003);
 			setConversationProps({id: $__id, op: "move", l: folder.id}, ZimbraEvent.CONVERSATION_MOVED);
 		}
 		
 		public function remove():void{
-			if($__id == -1) throw new Error("Server Error. Message is not on the server");
+			if($__id == -1) throw new ZimbraError(ZimbraError.e10007, 10007);
 			setConversationProps({id: $__id, op: "move", l: 3}, ZimbraEvent.CONVERSATION_REMOVED);
 		}
 		
 		public function flag():void{
-			if($__id == -1) throw new Error("Server Error. Message is not on the server");
+			if($__id == -1) throw new ZimbraError(ZimbraError.e10007, 10007);
 			setConversationProps({id: $__id, op: "flag"}, ZimbraEvent.CONVERSATION_MODIFIED);
 		}
 		
 		public function unflag():void{
-			if($__id == -1) throw new Error("Server Error. Message is not on the server");
+			if($__id == -1) throw new ZimbraError(ZimbraError.e10007, 10007);
 			setConversationProps({id: $__id, op: "!flag"}, ZimbraEvent.CONVERSATION_MODIFIED);
 		}
 		
 		public function tag(tag:ZimbraTag):void{
-			if($__id == -1) throw new Error("Server Error. Conversation is not on the server");
-			if(tag.id == -1) throw new Error("Server Error. Tag is not on the server");
+			if($__id == -1) throw new ZimbraError(ZimbraError.e10006, 10006);
+			if(tag.id == -1) throw new ZimbraError(ZimbraError.e10002, 10002);
 			setConversationProps({id: $__id, op: "tag", tag: tag.id}, ZimbraEvent.CONVERSATION_TAGGED);
 		}
 		
 		public function untag(tag:ZimbraTag = null):void{
-			if($__id == -1) throw new Error("Server Error. Conversation is not on the server");
-			if(tag.id == -1) throw new Error("Server Error. Tag is not on the server");
+			if($__id == -1) throw new ZimbraError(ZimbraError.e10006, 10006);
+			if(tag.id == -1) throw new ZimbraError(ZimbraError.e10002, 10002);
 			if(tag != null){
 				setConversationProps({id: $__id, op: "!tag", tag: tag.id}, ZimbraEvent.CONVERSATION_TAGGED);
 			}else{

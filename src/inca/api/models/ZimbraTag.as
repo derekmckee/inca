@@ -3,6 +3,7 @@ package inca.api.models {
 	import flash.events.EventDispatcher;
 	
 	import inca.api.Zimbra;
+	import inca.api.errors.*;
 	import inca.api.events.ZimbraEvent;
 	import inca.core.inca_internal;
 	
@@ -42,8 +43,8 @@ package inca.api.models {
 		}
 		
 		public function create():void{
-			if($__id != -1) throw new Error("Server Error. Tag is already on server.");
-			if(!$__name || !$__name.length) throw new Error("Parameter Error. Need to specify all required fields");
+			if($__id != -1) throw new ZimbraError(ZimbraError.e10011, 10011);
+			if(!$__name || !$__name.length) throw new ZimbraError(ZimbraError.e10008, 10008);
 			if($__connector.loggedIn){
 				var body:Object = {CreateTagRequest: 
 							{
@@ -56,12 +57,12 @@ package inca.api.models {
 						};
 				$__connector.inca_internal::sendProxiedRequest(body, ZimbraEvent.TAG_CREATED, this);
 			}else{
-				throw new Error("Connection Error. You are not logged in.");
+				throw new ZimbraError(ZimbraError.e10004, 10004);
 			}
 		}
 		
 		public function rename(value:String):void{
-			if($__id == -1) throw new Error("Server Error. Tag is not on server.");
+			if($__id == -1) throw new ZimbraError(ZimbraError.e10002, 10002);
 			if($__connector.loggedIn){
 				var body:Object = {TagActionRequest: 
 							{
@@ -75,12 +76,12 @@ package inca.api.models {
 						};
 				$__connector.inca_internal::sendProxiedRequest(body, ZimbraEvent.TAG_MODIFIED, this);
 			}else{
-				throw new Error("Connection Error. You are not logged in.");
+				throw new ZimbraError(ZimbraError.e10004, 10004);
 			}
 		}
 		
 		public function changeColor(value:uint):void{
-			if($__id == -1) throw new Error("Server Error. Tag is not on server.");
+			if($__id == -1) throw new ZimbraError(ZimbraError.e10002, 10002);
 			if($__connector.loggedIn){
 				var body:Object = {TagActionRequest: 
 							{
@@ -94,12 +95,12 @@ package inca.api.models {
 						};
 				$__connector.inca_internal::sendProxiedRequest(body, ZimbraEvent.TAG_MODIFIED, this);
 			}else{
-				throw new Error("Connection Error. You are not logged in.");
+				throw new ZimbraError(ZimbraError.e10004, 10004);
 			}
 		}
 		
 		public function remove():void{
-			if($__id == -1) throw new Error("Server Error. Tag is not on server.");
+			if($__id == -1) throw new ZimbraError(ZimbraError.e10002, 10002);
 			if($__connector.loggedIn){
 				var body:Object = {TagActionRequest: 
 							{
@@ -112,7 +113,7 @@ package inca.api.models {
 						};
 				$__connector.inca_internal::sendProxiedRequest(body, ZimbraEvent.TAG_REMOVED, this);
 			}else{
-				throw new Error("Connection Error. You are not logged in.");
+				throw new ZimbraError(ZimbraError.e10004, 10004);
 			}
 		}
 

@@ -3,6 +3,7 @@ package inca.api.models {
 	import flash.events.EventDispatcher;
 	
 	import inca.api.Zimbra;
+	import inca.api.errors.*;
 	import inca.api.events.ZimbraEvent;
 	import inca.core.inca_internal;
 	
@@ -59,9 +60,9 @@ package inca.api.models {
 		}
 		
 		public function create():void{
-			if($__id != -1) throw new Error("Server Error. Folder is already on server.");
-			if(!$__name || !$__name.length) throw new Error("Parameter Error. Need to specify all required fields");
-			if(!$__parentFolder) throw new Error("Parameter Error. Need to specify all required fields");
+			if($__id != -1) throw new ZimbraError(ZimbraError.e10009, 10009);
+			if(!$__name || !$__name.length) throw new ZimbraError(ZimbraError.e10008, 10008);
+			if(!$__parentFolder) throw new ZimbraError(ZimbraError.e10008, 10008);
 			if($__connector.loggedIn){
 				var body:Object = {CreateFolderRequest: 
 							{
@@ -75,12 +76,12 @@ package inca.api.models {
 						};
 				$__connector.inca_internal::sendProxiedRequest(body, ZimbraEvent.FOLDER_CREATED, this);
 			}else{
-				throw new Error("Connection Error. You are not logged in.");
+				throw new ZimbraError(ZimbraError.e10004, 10004);
 			}
 		}
 		
 		public function rename(value:String):void{
-			if($__id == -1) throw new Error("Server Error. Folder is not on server.");
+			if($__id == -1) throw new ZimbraError(ZimbraError.e10003, 10003);
 			if($__connector.loggedIn){
 				var body:Object = {FolderActionRequest: 
 							{
@@ -95,13 +96,13 @@ package inca.api.models {
 				$__name = value;
 				$__connector.inca_internal::sendProxiedRequest(body, ZimbraEvent.FOLDER_MODIFIED, this);
 			}else{
-				throw new Error("Connection Error. You are not logged in.");
+				throw new ZimbraError(ZimbraError.e10004, 10004);
 			}
 		}
 		
 		public function move(value:ZimbraFolder):void{
-			if($__id == -1) throw new Error("Server Error. Folder is not on server.");
-			if(value.id == -1) throw new Error("Server Error. Parent folder is not on server.");
+			if($__id == -1) throw new ZimbraError(ZimbraError.e10003, 10003);
+			if(value.id == -1) throw new ZimbraError(ZimbraError.e10010, 10010);
 			if($__connector.loggedIn){
 				var body:Object = {FolderActionRequest: 
 							{
@@ -116,12 +117,12 @@ package inca.api.models {
 				$__parentFolder = value;
 				$__connector.inca_internal::sendProxiedRequest(body, ZimbraEvent.FOLDER_MOVED, this);
 			}else{
-				throw new Error("Connection Error. You are not logged in.");
+				throw new ZimbraError(ZimbraError.e10004, 10004);
 			}
 		}
 		
 		public function trash():void{
-			if($__id == -1) throw new Error("Server Error. Folder is not on server.");
+			if($__id == -1) throw new ZimbraError(ZimbraError.e10003, 10003);
 			if($__connector.loggedIn){
 				var body:Object = {FolderActionRequest: 
 							{
@@ -135,12 +136,12 @@ package inca.api.models {
 				
 				$__connector.inca_internal::sendProxiedRequest(body, ZimbraEvent.FOLDER_TRASHED, this);
 			}else{
-				throw new Error("Connection Error. You are not logged in.");
+				throw new ZimbraError(ZimbraError.e10004, 10004);
 			}
 		}
 		
 		public function changeColor(value:uint):void{
-			if($__id == -1) throw new Error("Server Error. Folder is not on server.");
+			if($__id == -1) throw new ZimbraError(ZimbraError.e10003, 10003);
 			if($__connector.loggedIn){
 				var body:Object = {FolderActionRequest: 
 							{
@@ -155,13 +156,13 @@ package inca.api.models {
 				$__color = value;
 				$__connector.inca_internal::sendProxiedRequest(body, ZimbraEvent.FOLDER_MODIFIED, this);
 			}else{
-				throw new Error("Connection Error. You are not logged in.");
+				throw new ZimbraError(ZimbraError.e10004, 10004);
 			}
 		}
 		
 		public function markAsRead():void{
-			if($__id == -1) throw new Error("Server Error. Folder is not on server.");
-			if(!$__parentFolder) throw new Error("Parameter Error. Need to specify all required fields");
+			if($__id == -1) throw new ZimbraError(ZimbraError.e10003, 10003);
+			if(!$__parentFolder) throw new ZimbraError(ZimbraError.e10008, 10008);
 			if($__connector.loggedIn){
 				var body:Object = {FolderActionRequest: 
 							{
@@ -176,12 +177,12 @@ package inca.api.models {
 				$__unreadCount = 0;
 				$__connector.inca_internal::sendProxiedRequest(body, ZimbraEvent.FOLDER_MODIFIED, this);
 			}else{
-				throw new Error("Connection Error. You are not logged in.");
+				throw new ZimbraError(ZimbraError.e10004, 10004);
 			}
 		}
 		
 		public function empty():void{
-			if($__id == -1) throw new Error("Server Error. Folder is not on server.");
+			if($__id == -1) throw new ZimbraError(ZimbraError.e10003, 10003);
 			if($__connector.loggedIn){
 				var body:Object = {FolderActionRequest: 
 							{
@@ -197,12 +198,12 @@ package inca.api.models {
 				$__count = 0;
 				$__connector.inca_internal::sendProxiedRequest(body, ZimbraEvent.FOLDER_EMPTIED, this);
 			}else{
-				throw new Error("Connection Error. You are not logged in.");
+				throw new ZimbraError(ZimbraError.e10004, 10004);
 			}
 		}
 		
 		public function remove():void{
-			if($__id == -1) throw new Error("Server Error. Folder is not on server.");
+			if($__id == -1) throw new ZimbraError(ZimbraError.e10003, 10003);
 			if($__connector.loggedIn){
 				var body:Object = {FolderActionRequest: 
 							{
@@ -215,7 +216,7 @@ package inca.api.models {
 						};
 				$__connector.inca_internal::sendProxiedRequest(body, ZimbraEvent.FOLDER_REMOVED, this);
 			}else{
-				throw new Error("Connection Error. You are not logged in.");
+				throw new ZimbraError(ZimbraError.e10004, 10004);
 			}
 		}
 
